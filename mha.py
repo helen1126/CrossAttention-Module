@@ -3,6 +3,9 @@ import torch.nn as nn
 from transformers import CLIPTextModel, CLIPTokenizer
 from torch.utils.tensorboard import SummaryWriter
 
+# 可选：使用镜像源下载模型
+import os
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
 # 定义多头注意力层
 class MultiHeadAttention(nn.Module):
@@ -37,7 +40,7 @@ class MultiHeadAttention(nn.Module):
 
 
 class TextEncoderWithMHA:
-    def __init__(self):
+    def __init__(self, output_dim=768):
         # 加载CLIP文本编码器和分词器
         self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch16")
         self.text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch16")
@@ -46,6 +49,9 @@ class TextEncoderWithMHA:
         d_model = self.text_encoder.config.hidden_size
         num_heads = 8
         self.mha = MultiHeadAttention(d_model, num_heads)
+
+        # 调整输出维度
+        self.output_projection = nn.Linear(d_model, output_dim)
 
     def encode_text(self, text):
         # 分词
@@ -62,6 +68,13 @@ class TextEncoderWithMHA:
         # 取[CLS]标记的输出作为语义嵌入
         embeddings = attn_output[:, 0, :]
 
+        # 调整输出维度
+        embeddings = self.output_projection(embeddings)
+
+        # 如果输入多个关键词，对嵌入求平均
+        if len(text) > 1:
+            embeddings = embeddings.mean(dim=0, keepdim=True)
+
         # 输出格式
         output = {"embeddings": embeddings, "attention_weights": attention_weights}
 
@@ -69,8 +82,9 @@ class TextEncoderWithMHA:
 
 
 def test_text_encoder():
-    encoder = TextEncoderWithMHA()
-    text = ["A cat and a dog"]
+    # 可以在这里指定所需的输出维度
+    encoder = TextEncoderWithMHA(output_dim=768)
+    text = ["A cat"]  # 输入文本
     result = encoder.encode_text(text)
     print("Test Output:", result)
     # 使用TensorBoard可视化注意力权重
@@ -83,4 +97,3 @@ def test_text_encoder():
 
 if __name__ == "__main__":
     test_text_encoder()
-    
