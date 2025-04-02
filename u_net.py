@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from PIL import Image
 import torchvision.transforms as transforms
-import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -116,4 +115,3 @@ if __name__ == "__main__":
     # 清空缓存
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    
