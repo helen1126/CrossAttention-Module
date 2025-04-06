@@ -1,0 +1,10 @@
+torch
+torchvision
+flask
+tensorboard
+requests
+openai
+openai-clip
+pillow
+geoip2
+python-opencv
